@@ -1,40 +1,77 @@
 ########
-推理部署
+Inference 배포
 ########
 
-飞桨推理产品简介
+PaddlePaddle Inference 소개
 ==================
 
+PaddlePaddle 생태계의 중요한 부분으로서, PaddlePaddle은 여러 가지 추론 제품을 제공하여 딥러닝 모델 애플리케이션의 마지막 단계를 완전히 지원합니다.
 
-作为飞桨生态重要的一部分，飞桨提供了多个推理产品，完整承接深度学习模型应用的最后一公里。
-
-整体上分，推理产品主要包括如下子产品
-
+전체적으로 추론 제품은 다음과 같은 하위 제품들로 구성되어 있습니다.
 
 .. csv-table::
-    :header: "名称", "英文表示", "适用场景"
+    :header: "이름", "영문 명칭", "적용 시나리오"
     :widths: 10, 10, 30
 
-    "飞桨原生推理库", "`Paddle Inference <http://paddleinference.paddlepaddle.org.cn/introduction/summary.html>`_ ", "高性能服务器端、云端推理"
-    "飞桨服务化推理框架", "Paddle Serving", "自动服务、模型管理等高阶功能"
-    "飞桨轻量化推理引擎", "`Paddle Lite <http://paddlelite.paddlepaddle.org.cn/introduction/tech_highlights.html>`_ ", "移动端、物联网等"
-    "飞桨前端推理引擎", "Paddle.js", "浏览器中推理、小程序等"
+    "PaddlePaddle 기본 추론 라이브러리", "`Paddle Inference <http://paddleinference.paddlepaddle.org.cn/introduction/summary.html>`_ ", "고성능 서버 및 클라우드 추론"
+    "PaddlePaddle 서비스형 추론 프레임워크", "Paddle Serving", "자동화 서비스, 모델 관리 등의 고급 기능"
+    "PaddlePaddle 경량화 추론 엔진", "`Paddle Lite <http://paddlelite.paddlepaddle.org.cn/introduction/tech_highlights.html>`_ ", "모바일, IoT 등"
+    "PaddlePaddle 프론트엔드 추론 엔진", "Paddle.js", "브라우저 내 추론, 미니 프로그램 등"
+
+각 제품은 추론 생태계 내에서 다음과 같은 관계를 가집니다:
 
 
-各产品在推理生态中的关系如下
+.. code-block:: text
 
-.. image:: images/inference_ecosystem.png
+    ┌────────────┐       ┌────────────┐
+    │PaddlePaddle│─────▶ │   모델     │
+    │  개발+학습   │       │            │
+    └────────────┘       └────┬───────┘
+                              │
+                              ▼
+                       ┌────────────┐
+                       │ PaddleSlim │
+                       │ 압축/양자화/  │
+                       │ 가지치기     │
+                       └────┬───────┘
+                            │
+                            ▼
+              ┌─────────────┼────────────────┬──────────────┐
+              ▼             ▼                ▼              ▼
+       ┌────────────┐ ┌────────────┐  ┌────────────┐  ┌────────────┐
+       │Paddle      │ │Paddle Lite │  │Paddle.js   │  │Paddle      │
+       │Inference   │ │모바일/엣지    │  │웹 프론트엔드  │  │Serving     │
+       │서버 추론      │ │추론        │  │추론         │  │서비스형 배포  │
+       └────────────┘ └────────────┘  └────────────┘  └────────────┘
 
-**用户使用飞桨推理产品的工作流** 如下
+                              ▲
+                              │
+                       ┌──────┴───────┐
+                       │ X2Paddle     │
+                       │ 모델 변환 도구│
+                       └──────┬───────┘
+                              │
+                              ▼
+                       ┌────────────┐
+                       │TensorFlow/ │
+                       │ONNX 등 외부│
+                       │ 프레임워크 │
+                       └────────────┘
 
-1. 获取一个飞桨的推理模型，其中有两种方法
+    ───────────────────────────────────────────────────────────────
+                    설치 및 환경 구성
 
-    1. 利用飞桨训练得到一个推理模型
-    2. 用 X2Paddle 工具从第三方框架（比如 TensorFlow 或者 Caffe 等）产出的模型转化
 
-2. （可选）对模型进行进一步优化， PaddleSlim 工具可以对模型进行压缩，量化，裁剪等工作，显著提升模型执行的速度性能，降低资源消耗
+**사용자가 PaddlePaddle 추론 제품을 사용하는 워크플로우는 다음과 같습니다:**
 
-3. 将模型部署到具体的推理产品上
+1. PaddlePaddle 추론 모델을 획득합니다. 다음 두 가지 방법이 있습니다:
+   
+    1. PaddlePaddle을 이용해 학습을 수행하여 추론 모델을 얻음
+    2. X2Paddle 도구를 사용해 TensorFlow 또는 Caffe 등의 타 프레임워크에서 생성된 모델을 변환
+
+2. (선택 사항) 모델을 추가로 최적화합니다. `PaddleSlim` 도구를 통해 모델 압축, 양자화, 가지치기 등을 수행하여 모델 실행 속도와 성능을 크게 향상시키고 자원 소모를 줄일 수 있습니다.
+
+3. 모델을 특정 추론 제품에 배포합니다.
 
 ..  toctree::
     :hidden:
