@@ -1,76 +1,78 @@
-# 服务器部署 — Paddle Inference
+# 서버 배포 — Paddle Inference
 
-Paddle Inference 是飞桨的原生推理库， 作用于服务器端和云端，提供高性能的推理能力。
+Paddle Inference는 PaddlePaddle의 네이티브 추론 라이브러리로, 서버 및 클라우드 환경에서 고성능 추론 기능을 제공합니다.
 
-由于能力直接基于飞桨的训练算子，因此 Paddle Inference 可以通用支持飞桨训练出的所有模型。
+Paddle Inference는 PaddlePaddle의 학습 연산자를 기반으로 동작하기 때문에, Paddle에서 학습한 모든 모델을 범용적으로 지원할 수 있습니다.
 
-Paddle Inference 功能特性丰富，性能优异，针对不同平台不同的应用场景进行了深度的适配优化，做到高吞吐、低时延，保证了飞桨模型在服务器端即训即用，快速部署。
+풍부한 기능과 뛰어난 성능을 갖춘 Paddle Inference는 다양한 플랫폼과 애플리케이션 시나리오에 최적화되어 높은 처리량과 낮은 지연 시간을 보장하며, 서버에서 모델을 학습 직후 바로 사용할 수 있도록 빠른 배포를 지원합니다.
 
-一些常见的文档链接如下：
-- 完整使用文档位于：[Paddle Inference 文档](https://www.paddlepaddle.org.cn/inference/product_introduction/inference_intro.html)
-- 代码示例位于[inference demo](https://github.com/PaddlePaddle/Paddle-Inference-Demo)
-- 点此 [下载安装 Linux 预测库](https://www.paddlepaddle.org.cn/inference/master/guides/install/download_lib.html#linux)
-- 点此 [下载安装 Windows 预测库](https://www.paddlepaddle.org.cn/inference/master/guides/install/download_lib.html#windows)
+자주 사용하는 문서 링크:
+- 전체 사용 설명서: [Paddle Inference 문서](https://www.paddlepaddle.org.cn/inference/product_introduction/inference_intro.html)
+- 코드 예제: [inference demo](https://github.com/PaddlePaddle/Paddle-Inference-Demo)
+- [Linux 예측 라이브러리 다운로드](https://www.paddlepaddle.org.cn/inference/master/guides/install/download_lib.html#linux)
+- [Windows 예측 라이브러리 다운로드](https://www.paddlepaddle.org.cn/inference/master/guides/install/download_lib.html#windows)
 
-## 与主框架 model.predict 区别
+## Model.predict와의 차이점
 
-飞桨推理产品 paddle inference 和主框架的 Model.predict 均可实现推理预测，Paddle Inference 是飞桨的原生推理库， 作用于服务器端和云端，提供高性能的推理能力，主框架的 Model 对象是一个具备训练、测试、推理的神经网络。相比于 Model.predict，inference 可使用 MKLDNN、CUDNN、TensorRT 进行预测加速，同时支持用 X2Paddle 工具从第三方框架（TensorFlow、PyTorch、Caffe 等）产出的模型，可联动 PaddleSlim，支持加载量化、裁剪和蒸馏后的模型部署。Model.predict 适用于训练好的模型直接进行预测，paddle inference 适用于对推理性能、通用性有要求的用户，针对不同平台不同的应用场景进行了深度的适配优化，保证模型在服务器端即训即用，快速部署。
+Paddle Inference는 고성능 추론 라이브러리이며, 서버 및 클라우드에 적합합니다. 반면, Model 객체의 `Model.predict`는 학습·테스트·추론이 모두 가능한 네트워크 모델입니다. Paddle Inference는 MKLDNN, CUDNN, TensorRT를 사용하여 예측 성능을 가속화할 수 있으며, X2Paddle 도구를 통해 TensorFlow, PyTorch, Caffe 등에서 변환된 모델도 사용할 수 있습니다. 또한, PaddleSlim과 연동되어 양자화, 가지치기, 지식 증류된 모델도 배포할 수 있습니다.  
+`Model.predict`는 간단한 예측 용도에 적합하며, `Paddle Inference`는 고성능 및 범용성이 요구되는 환경에서 더 적합합니다.
 
-## 预测流程图
+## 추론 프로세스 흐름도
 
 ![](./images/inference.png)
 
-## 高性能实现
+## 고성능 구현
 
-### 内存/显存复用提升服务吞吐量
+### 메모리/VRAM 재사용을 통한 서비스 처리량 향상
 
-在推理初始化阶段，对模型中的 OP 输出 Tensor 进行依赖分析，将两两互不依赖的 Tensor 在内存/显存空间上进行复用，进而增大计算并行量，提升服务吞吐量。
+초기화 단계에서 OP의 출력 Tensor 간의 의존성을 분석하여, 서로 독립적인 Tensor는 동일한 메모리/VRAM 공간을 공유하여 병렬 처리를 확대하고 처리량을 높입니다.
 
-### 细粒度 OP 横向纵向融合减少计算量
+### 세밀한 OP 통합으로 계산량 감소
 
-在推理初始化阶段，按照已有的融合模式将模型中的多个 OP 融合成一个 OP，减少了模型的计算量的同时，也减少了 Kernel Launch 的次数，从而能提升推理性能。目前 Paddle Inference 支持的融合模式多达几十个。
+초기화 시 여러 OP를 사전에 정의된 방식으로 하나의 OP로 융합하여, 계산량과 Kernel 실행 횟수를 줄여 추론 성능을 향상시킵니다. 현재 수십 가지 이상의 융합 방식이 지원됩니다.
 
-### 内置高性能的 CPU/GPU Kernel
+### 고성능 CPU/GPU Kernel 내장
 
-内置同 Intel、Nvidia 共同打造的高性能 kernel，保证了模型推理高性能的执行。
+Intel, Nvidia와 공동 개발한 고성능 Kernel을 내장하여 고성능 추론을 보장합니다.
 
-## 多功能集成
+## 다양한 기능 통합
 
-### 集成 TensorRT 加快 GPU 推理速度
+### TensorRT 통합으로 GPU 추론 가속
 
-Paddle Inference 采用子图的形式集成 TensorRT，针对 GPU 推理场景，TensorRT 可对一些子图进行优化，包括 OP 的横向和纵向融合，过滤冗余的 OP，并为 OP 自动选择最优的 kernel，加快推理速度。
+Paddle Inference는 서브그래프 형태로 TensorRT를 통합하여 GPU 추론 속도를 높입니다. OP 통합, 불필요한 OP 제거, 최적 Kernel 선택 등의 최적화를 통해 속도를 향상시킵니다.
 
-### 集成 oneDNN CPU 推理加速引擎
+### oneDNN CPU 추론 가속 엔진 통합
 
-一行代码开始 oneDNN 加速，快捷高效。
+한 줄의 코드로 oneDNN 가속을 시작할 수 있어 간편하고 효율적입니다.
 
-### 支持 PaddleSlim 量化压缩模型的部署
+### PaddleSlim 양자화 압축 모델 배포 지원
 
-PaddleSlim 是飞桨深度学习模型压缩工具，Paddle Inference 可联动 PaddleSlim，支持加载量化、裁剪和蒸馏后的模型并部署，由此减小模型存储空间、减少计算占用内存、加快模型推理速度。其中在模型量化方面，Paddle Inference 在 X86 CPU 上做了深度优化，常见分类模型的单线程性能可提升近 3 倍，ERNIE 模型的单线程性能可提升 2.68 倍。
+PaddleSlim은 모델 압축 도구로, Paddle Inference와 연동하여 양자화, 가지치기, 증류된 모델을 지원합니다.  
+양자화된 모델의 경우 X86 CPU에서 단일 스레드 성능이 최대 3배 향상되며, ERNIE 모델은 최대 2.68배 향상됩니다.
 
-### 支持 X2Paddle 转换得到的模型
+### X2Paddle 변환 모델 지원
 
-除支持飞桨训练的模型外，也支持用 X2Paddle 工具从第三方框架（比如 TensorFlow、PyTorch 或者 Caffe 等）产出的模型。
+Paddle에서 학습한 모델 외에도 TensorFlow, PyTorch, Caffe 등의 모델을 X2Paddle 도구로 변환하여 지원합니다.
 
-## 多场景适配
+## 다양한 시나리오에 적응
 
-### 主流软硬件环境兼容适配
+### 주요 하드웨어 및 소프트웨어 환경 지원
 
-支持服务器端 X86 CPU、NVIDIA GPU 芯片，兼容 Linux/Mac/Windows 系统，同时对飞腾、鲲鹏、曙光、昆仑芯等国产 CPU/NPU 进行适配。支持所有飞桨训练产出的模型，完全做到即训即用。
+X86 CPU, NVIDIA GPU를 지원하며, Linux/Mac/Windows뿐 아니라 중국산 칩(Feiteng, Kunpeng, Sugon, KylinX)까지 지원합니다. Paddle 모델을 바로 학습하고 바로 배포할 수 있습니다.
 
-### 主流、国产操作系统全适配
+### 주요 및 국산 운영체제 호환
 
-适配主流操作系统 Linux、Windows、macOS，同时适配麒麟 OS、统信 OS、普华 OS、中科方德等国产操作系统。
+Linux, Windows, macOS는 물론, Kylin OS, Tongxin OS, Puhua OS, Zhongke Fangde 등도 지원합니다.
 
-### 多语言接口支持
+### 다양한 언어 API 지원
 
-支持 C++、Python、C、Go、Java 和 R 语言 API，对于其他语言，提供了 ABI 稳定的 C API，提供配套的教程、API 文档及示例。
+C++, Python, C, Go, Java, R 언어 API를 제공하며, 기타 언어는 안정적인 C API를 통해 사용 가능합니다. 튜토리얼, API 문서, 예제도 함께 제공됩니다.
 
-## 交流与反馈
+## 소통 및 피드백
 
-- 欢迎您通过 GitHub Issues 来提交问题、报告与建议
-- 微信公众号：飞桨 PaddlePaddle
-- 微信群: 部署交流群
+- GitHub Issues를 통해 문제 및 제안 사항을 접수해 주세요.
+- 공식 위챗 계정: 飞桨 PaddlePaddle  
+- 위챗 커뮤니티: 배포 관련 기술 그룹
 
 <p align="center"><img width="200" height="200"  src="https://user-images.githubusercontent.com/45189361/64117959-1969de80-cdc9-11e9-84f7-e1c2849a004c.jpeg"/>&#8194;&#8194;&#8194;&#8194;&#8194;<img width="200" height="200" margin="500" src="https://github.com/PaddlePaddle/FluidDoc/blob/develop/doc/paddle/guides/05_inference_deployment/inference/images/wechat.png?raw=true"/></p>
-<p align="center">  &#8194;&#8194;&#8194;微信公众号&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;官方技术交流微信群</p>
+<p align="center">  &#8194;&#8194;&#8194;공식 위챗 계정&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;공식 기술 교류 위챗 그룹</p>
